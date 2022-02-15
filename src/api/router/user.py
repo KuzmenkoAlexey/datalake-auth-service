@@ -2,7 +2,11 @@ from typing import Optional
 
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers
-from fastapi_users.authentication import JWTAuthentication
+from fastapi_users.authentication import (
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
+)
 from fastapi_users.db import MongoDBUserDatabase
 
 from api.models import User, UserCreate, UserUpdate
@@ -39,11 +43,19 @@ def get_user_manager(user_db: MongoDBUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
 
-jwt_authentication = JWTAuthentication(
-    secret=settings.jwt_secret,
-    lifetime_seconds=settings.jwt_lifetime_seconds,
-    tokenUrl="auth/jwt/login",
+bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
+
+
+def get_jwt_strategy() -> JWTStrategy:
+    return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
+
+
+jwt_authentication = AuthenticationBackend(
+    name="jwt",
+    transport=bearer_transport,
+    get_strategy=get_jwt_strategy,
 )
+
 
 fastapi_users = FastAPIUsers(
     get_user_manager,
