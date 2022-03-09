@@ -1,14 +1,19 @@
+import asyncio
+
 import sentry_sdk
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from fastapi import Depends, FastAPI
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from api.router.user import current_active_user, fastapi_users, jwt_authentication
 from config import settings
+from database.db import DatabaseWrapper
 from database.models import UserDB
 
 
-def get_application():
+def get_application(loop=None):
     sentry_sdk.init(dsn=settings.sentry_url, traces_sample_rate=1.0)
+
+    DatabaseWrapper.set_event_loop(loop or asyncio.get_event_loop())
 
     app = FastAPI(title="Auth Service")
 
